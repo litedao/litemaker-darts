@@ -27,7 +27,7 @@ contract MakerDartsGame is MakerUserGeneric, Owned {
   uint public revealBlocks;
   uint public calculationBlocks;
   uint public startingBlock; // 0 - the game hasn't started.
-  uint public winnerReward;
+  uint public winnerCut;
   bool public debug;
 
   event GameStarted();
@@ -124,8 +124,8 @@ contract MakerDartsGame is MakerUserGeneric, Owned {
     participants = numParticipants;
   }
 
-  function setParticipantReward(uint percent) onlyOwner beforeGame {
-    winnerReward = percent;
+  function setParticipantReward(uint reward) onlyOwner beforeGame {
+    participantReward = reward;
   }
 
   function setCommitmentBlocks (uint blocks) onlyOwner beforeGame {
@@ -140,8 +140,8 @@ contract MakerDartsGame is MakerUserGeneric, Owned {
     calculationBlocks = blocks;
   }
 
-  function setWinnerReward(uint8 percent) onlyOwner beforeGame {
-    winnerReward = percent;
+  function setWinnerCut(uint8 percent) onlyOwner beforeGame {
+    winnerCut = percent;
   }
 
   function setWinners(uint numWinners) onlyOwner beforeGame {
@@ -217,7 +217,7 @@ contract MakerDartsGame is MakerUserGeneric, Owned {
     if (bets[commitHash].result == 0x0 || bets[commitHash].claimed) {
       throw;
     }
-    var winnerPayout = (betSize * winnerReward) / 100;
+    var winnerPayout = (betSize * winnerCut) / 100;
     var totalPayout = (betSize - winnerPayout) + participantReward;
 
     bool winner = false;
@@ -225,7 +225,7 @@ contract MakerDartsGame is MakerUserGeneric, Owned {
       if (winnerKeys[i] == commitHash) {
         totalPayout = betSize +
           (winnerPayout * (betKeys.length - winnerKeys.length)
-           / winnerKeys.length);
+           / winnerKeys.length) + participantReward;
         break;
       }
     }

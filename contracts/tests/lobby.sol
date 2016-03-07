@@ -24,6 +24,13 @@ contract MakerDartsActor is MakerUserGeneric {
     betHash = _betHash;
   }
 
+  function createGame (uint bet, bytes32 asset)
+      returns (MakerDartsGame) {
+    var game = MakerDartsGame(lobby.createGame(bet, asset, true));
+    game.setBlockNumber(1);
+    return game;
+  }
+
   function createZSGame (uint bet, bytes32 asset)
       returns (MakerDartsGame) {
     var zsGame = MakerDartsGame(lobby.createZeroSumGame(bet, asset, true));
@@ -170,6 +177,87 @@ contract MakerLobbyTest is Test {
     alice.setGame(game);
     alice.doApprove(game, betSize, betAsset);
     alice.doStartGame();
+  }
+
+  function testFullGoldenPathIncentivizedGame () logs_gas {
+    alice.setBetHash(sha3(aliceSalt, aliceTarget));
+
+    var game = new MakerDartsGame(registry, betSize, betAsset, true);
+    game.setBlockNumber(block.number);
+    game.setParticipants(5);
+    game.setParticipantReward(10000);
+    game.setCommitmentBlocks(12);
+    game.setRevealBlocks(12);
+    game.setCalculationBlocks(12);
+    game.setWinnerCut(75);
+    game.setWinners(2);
+    game.setOwner(alice);
+
+    alice.setGame(game);
+    albert.setGame(game);
+    bob.setGame(game);
+    barb.setGame(game);
+    izzy.setGame(game);
+
+    registry.allocate(betSize*2, betAsset, alice);
+    alice.doApprove(game, betSize*2, betAsset);
+    alice.doStartGame();
+
+    // Commit
+    albert.setBetHash(sha3(albertSalt, albertTarget));
+    albert.doApprove(game, betSize, betAsset);
+    albert.doCommitBet(albert);
+
+    bob.setBetHash(sha3(bobSalt, bobTarget));
+    bob.doApprove(game, betSize, betAsset);
+    bob.doCommitBet(bob);
+
+    barb.setBetHash(sha3(barbSalt, barbTarget));
+    barb.doApprove(game, betSize, betAsset);
+    barb.doCommitBet(barb);
+
+    izzy.setBetHash(sha3(izzySalt, izzyTarget));
+    izzy.doApprove(game, betSize, betAsset);
+    izzy.doCommitBet(izzy);
+
+    // Advance the game past the commitment round
+    game.setBlockNumber(block.number + game.commitmentBlocks());
+
+    // Reveal
+    alice.doRevealBet(aliceTarget, aliceSalt);
+    albert.doRevealBet(albertTarget, albertSalt);
+    bob.doRevealBet(bobTarget, bobSalt);
+    barb.doRevealBet(barbTarget, barbSalt);
+    izzy.doRevealBet(izzyTarget, izzySalt);
+
+    // Advance the game past the reveal round
+    game.setBlockNumber(block.number + game.commitmentBlocks() +
+                       game.revealBlocks());
+
+    // Calculate
+    alice.doCalculateResult();
+    albert.doCalculateResult();
+    bob.doCalculateResult();
+    barb.doCalculateResult();
+    izzy.doCalculateResult();
+
+    // Advance the game past the calculation round
+    game.setBlockNumber(block.number + game.commitmentBlocks() +
+                       game.revealBlocks() + game.calculationBlocks());
+
+    // Claim
+    alice.doClaim();
+    albert.doClaim();
+    bob.doClaim();
+    barb.doClaim();
+    izzy.doClaim();
+
+    // Check balances
+    assertEq(alice.balanceIn(betAsset), 2210000);
+    assertEq(albert.balanceIn(betAsset), 260000);
+    assertEq(bob.balanceIn(betAsset), 2135000);
+    assertEq(barb.balanceIn(betAsset), 2135000);
+    assertEq(izzy.balanceIn(betAsset), 260000);
   }
 
   function testFullGoldenPathZeroSumGame () logs_gas {
@@ -541,4 +629,3 @@ contract MakerLobbyTest is Test {
     izzy.doRequestRefund();
   }
 }
-
