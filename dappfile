@@ -1,0 +1,6 @@
+name: makerdarts
+layout:
+  sol_sources: contracts
+  build_dir: build
+dependencies:
+  makeruser: 0.1.0
