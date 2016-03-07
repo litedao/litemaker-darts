@@ -19,16 +19,18 @@ contract Owned {
 }
 
 contract MakerDartsGame is MakerUserGeneric, Owned {
-  uint public betSize;
+  uint public betSize; // in the asset's smallest unit
   bytes32 public betAsset;
-  uint public participants;
-  uint public participantReward;
-  uint public commitmentBlocks;
-  uint public revealBlocks;
-  uint public calculationBlocks;
-  uint public startingBlock; // 0 - the game hasn't started.
-  uint public winnerCut;
-  bool public debug;
+  uint public participants; // game can't start until this many players commit
+  uint public participantReward; // base reward for playing
+  uint public commitmentBlocks; // number of blocks in commitment round
+  uint public revealBlocks; // number of blocks in revealing round
+  uint public calculationBlocks; // number of blocks in calculation round
+  uint public startingBlock; // if 0, the game hasn't started yet.
+  uint public winnerCut; // percentage of each loser's bet to take & distribute
+  bool public debug; // enables overriding block.number
+  bytes32[] public betKeys; // commitHashes of bets
+  bytes32[] public winnerKeys; // commitHashes of winners
 
   event GameStarted();
   event Commit(address sender, bytes32 betHash, address recipient);
@@ -46,9 +48,7 @@ contract MakerDartsGame is MakerUserGeneric, Owned {
     bool claimed;
   }
 
-  mapping(bytes32=>Bet) public bets;
-  bytes32[] public betKeys;
-  bytes32[] public winnerKeys;
+  mapping(bytes32=>Bet) bets; // all the bets
   uint _numCompleters;
   bool _claimed;
 
