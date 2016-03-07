@@ -10,14 +10,15 @@ project) and RANDAO generate random numbers by hashing user input in sequence. I
 will get into the specifics of my model later, but for now let me highlight the
 three places where we diverged and why I made the design decisions I did.
 
-First of all, Maker Darts is a zero-sum game that may nonetheless result in the
-generation of random numbers for no cost (aside from Ethereum network
-transaction fees) in the long run due to the fact that all players have even
-odds of winning as long as all players are equally unpredictable in their input.
-If other players are predictable, a canny player may limit the search space for
-their prediction based on the range of probable inputs from the other players
-and thus profit by winning with better-than-average odds. Thus players have an
-incentive to provide unpredictable input to the RNG.
+First of all, Maker Darts allows for the creation of zero-sum games that may
+nonetheless result in the generation of random numbers for no cost (aside from
+Ethereum network transaction fees) in the long run due to the fact that all
+players have even odds of winning as long as all players are equally
+unpredictable in their input. If other players are predictable, a canny player
+may limit the search space for their prediction based on the range of probable
+inputs from the other players and thus profit by winning with
+better-than-average odds. Thus players have an incentive to provide
+unpredictable input to the RNG.
 
 Second, bets are sorted according to a pre-determined algorithm before the
 revealing begins. My goal here is to reduce any potential risk that might be
@@ -28,11 +29,9 @@ eventual outcome of the game. Whether this precaution is worth the extra
 transaction costs remains to be seen at this point. (I'll demonstrate how to
 make this judgement later in this series.)
 
-Third, players may use whatever token they wish to place bets, so long as it
-implements ERC20. Implementing the game this way allows greater market choice
-and fits better with the token agnoticism slated for the Serenity release. Maker
-Darts itself is meant to have simplified RNG/gambling games built on top of it,
-and thus tries to err on the side of providing too much choice initially.
+Third, players may use any asset listed in the Maker Asset Registry, including
+ether. This increases market choice while also providing an extra degree of
+safety via a whitelist.
 
 ## Gameplay
 
@@ -40,11 +39,11 @@ A game is initiated when a user posts a bet of arbitrary size, a hash of a salt
 value plus a target value, the minimum number of other participants they desire,
 the winner's reward (an integer percentage of the losers' bets the winners may
 claim), the number of winners this game, the lengths in blocks of the
-commitment, revelation, and tabulation rounds, and the address of the
-ERC20-compliant token contract being used. They may also optionally offer a fee
-to incentivize participants with lower risk tolerance to join. (It is not
-recommended that the fee exceed half the size of the bet, as this attenuates the
-incentive participants have to provide unpredictable input.)
+commitment, revelation, and tabulation rounds, and the symbol of an asset in the
+Maker Asset Registry. They may also optionally offer a fee to incentivize
+participants with lower risk tolerance to join. (It is not recommended that the
+fee exceed half the size of the bet, as this attenuates the incentive
+participants have to provide unpredictable input.)
 
 To join a game, a prospective participant must post a bet equal to the bet of
 the person who created the game, a hash of a salt value plus a target value, and

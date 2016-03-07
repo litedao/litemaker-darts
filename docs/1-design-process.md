@@ -20,7 +20,7 @@ number of satoshi she wishes to bet and the address of the Maker Darts contract.
 3. Alice computes a random salt and picks a target number. She adds and then
 hashes them together to obtain the value '0xf00b42'.
 
-4. Alice calls `createZeroSumMARGame(1000000, 'BTC', '0xf00b42')` on the Maker
+4. Alice calls `createZeroSumGame(1000000, 'BTC', '0xf00b42')` on the Maker
 Darts contract and receives back the address of a contract implementing the
 MakerDartsGame interface. She accepts the default settings of no participant
 reward, 12-block rounds, and five players, and calls `finalize()` on the
