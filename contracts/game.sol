@@ -39,7 +39,6 @@ contract MakerDartsGame is MakerUserGeneric, Owned {
   event Claim(bytes32 commitHash, uint payout);
 
   struct Bet {
-    bytes32 commitHash;
     address recipient;
     bytes32 target;
     bytes32 salt;
