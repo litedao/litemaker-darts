@@ -254,7 +254,15 @@ contract MakerDartsGame is MakerUserGeneric, Owned {
     if (!refundable(commitHash)) {
       throw;
     }
-    transfer(bets[commitHash].bettor, betSize + participantReward, betAsset);
+
+    var refundSize = betSize;
+    if (betKeys.length == participants) {
+      refundSize += participantReward;
+    } else if (bets[commitHash].bettor == owner) {
+      refundSize += (participantReward * participants);
+    }
+
+    transfer(bets[commitHash].bettor, refundSize, betAsset);
     delete bets[commitHash];
 
     if (balanceOf(this, betAsset) == 0) {

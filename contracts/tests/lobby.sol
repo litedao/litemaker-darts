@@ -50,6 +50,10 @@ contract MakerDartsActor is MakerUserGeneric {
     game.setCalculationBlocks(blocks);
   }
 
+  function doSetParticipantReward(uint participantReward) {
+    game.setParticipantReward(participantReward);
+  }
+
   function doStartGame() {
     game.startGame(betHash);
   }
@@ -486,7 +490,11 @@ contract MakerLobbyTest is Test {
     bob.setGame(game);
     barb.setGame(game);
 
-    alice.doApprove(game, betSize, betAsset);
+    var participantReward = 10;
+    var participantRewardCost = (participantReward * game.participants());
+    registry.allocate(participantRewardCost, betAsset, alice);
+    alice.doApprove(game, betSize + participantRewardCost, betAsset);
+    alice.doSetParticipantReward(participantReward);
     alice.doStartGame();
 
     // Commit
@@ -512,7 +520,7 @@ contract MakerLobbyTest is Test {
     barb.doRequestRefund();
 
     // Check balances
-    assertEq(alice.balanceIn(betAsset), betSize);
+    assertEq(alice.balanceIn(betAsset), betSize + participantRewardCost);
     assertEq(albert.balanceIn(betAsset), betSize);
     assertEq(bob.balanceIn(betAsset), betSize);
     assertEq(barb.balanceIn(betAsset), betSize);
@@ -531,7 +539,11 @@ contract MakerLobbyTest is Test {
     barb.setGame(game);
     izzy.setGame(game);
 
-    alice.doApprove(game, betSize, betAsset);
+    var participantReward = 10;
+    var participantRewardCost = (participantReward * game.participants());
+    registry.allocate(participantRewardCost, betAsset, alice);
+    alice.doApprove(game, betSize + participantRewardCost, betAsset);
+    alice.doSetParticipantReward(participantReward);
     alice.doStartGame();
 
     // Commit
@@ -578,11 +590,11 @@ contract MakerLobbyTest is Test {
     izzy.doRequestRefund();
 
     // Check balances
-    assertEq(alice.balanceIn(betAsset), betSize);
-    assertEq(albert.balanceIn(betAsset), betSize);
-    assertEq(bob.balanceIn(betAsset), betSize);
-    assertEq(barb.balanceIn(betAsset), betSize);
-    assertEq(izzy.balanceIn(betAsset), betSize);
+    assertEq(alice.balanceIn(betAsset), betSize + participantReward);
+    assertEq(albert.balanceIn(betAsset), betSize + participantReward);
+    assertEq(bob.balanceIn(betAsset), betSize + participantReward);
+    assertEq(barb.balanceIn(betAsset), betSize + participantReward);
+    assertEq(izzy.balanceIn(betAsset), betSize + participantReward);
   }
 
   function testFailRefundsAfterCommitments () logs_gas {
