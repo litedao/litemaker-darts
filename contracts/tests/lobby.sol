@@ -51,15 +51,15 @@ contract MakerDartsActor is MakerUserGeneric {
   }
 
   function doStartGame() {
-    game.startGame(betHash, this);
+    game.startGame(betHash);
   }
 
   function doApprove(address spender, uint value, bytes32 symbol) {
     approve(spender, value, symbol);
   }
 
-  function doCommitBet(address recipient) {
-    game.commitBet(betHash, recipient);
+  function doJoinGame(address bettor) {
+    game.joinGame(betHash, bettor);
   }
 
   function doRevealBet(bytes32 target, bytes32 salt) {
@@ -89,8 +89,8 @@ contract MockTokenRegistry is MakerTokenRegistry {
     set('MKR', bytes32(address(new DSTokenBase(1000000 ether))));
   }
 
-  function allocate(uint amount, bytes32 symbol, address recipient) {
-    getToken(symbol).transfer(recipient, amount);
+  function allocate(uint amount, bytes32 symbol, address bettor) {
+    getToken(symbol).transfer(bettor, amount);
   }
 }
 
@@ -166,7 +166,7 @@ contract MakerLobbyTest is Test {
     bob.setGame(game);
     bob.setBetHash(sha3(aliceSalt, aliceTarget));
     bob.doApprove(game, betSize, betAsset);
-    bob.doCommitBet(bob);
+    bob.doJoinGame(bob);
   }
 
   function testStartGame () logs_gas {
@@ -206,19 +206,19 @@ contract MakerLobbyTest is Test {
     // Commit
     albert.setBetHash(sha3(albertSalt, albertTarget));
     albert.doApprove(game, betSize, betAsset);
-    albert.doCommitBet(albert);
+    albert.doJoinGame(albert);
 
     bob.setBetHash(sha3(bobSalt, bobTarget));
     bob.doApprove(game, betSize, betAsset);
-    bob.doCommitBet(bob);
+    bob.doJoinGame(bob);
 
     barb.setBetHash(sha3(barbSalt, barbTarget));
     barb.doApprove(game, betSize, betAsset);
-    barb.doCommitBet(barb);
+    barb.doJoinGame(barb);
 
     izzy.setBetHash(sha3(izzySalt, izzyTarget));
     izzy.doApprove(game, betSize, betAsset);
-    izzy.doCommitBet(izzy);
+    izzy.doJoinGame(izzy);
 
     // Advance the game past the commitment round
     game.setBlockNumber(block.number + game.commitmentBlocks());
@@ -279,19 +279,19 @@ contract MakerLobbyTest is Test {
     // Commit
     albert.setBetHash(sha3(albertSalt, albertTarget));
     albert.doApprove(game, betSize, betAsset);
-    albert.doCommitBet(albert);
+    albert.doJoinGame(albert);
 
     bob.setBetHash(sha3(bobSalt, bobTarget));
     bob.doApprove(game, betSize, betAsset);
-    bob.doCommitBet(bob);
+    bob.doJoinGame(bob);
 
     barb.setBetHash(sha3(barbSalt, barbTarget));
     barb.doApprove(game, betSize, betAsset);
-    barb.doCommitBet(barb);
+    barb.doJoinGame(barb);
 
     izzy.setBetHash(sha3(izzySalt, izzyTarget));
     izzy.doApprove(game, betSize, betAsset);
-    izzy.doCommitBet(izzy);
+    izzy.doJoinGame(izzy);
 
     // Advance the game past the commitment round
     game.setBlockNumber(block.number + game.commitmentBlocks());
@@ -352,19 +352,19 @@ contract MakerLobbyTest is Test {
     // Commit
     albert.setBetHash(sha3(albertSalt, albertTarget));
     albert.doApprove(game, betSize, betAsset);
-    albert.doCommitBet(albert);
+    albert.doJoinGame(albert);
 
     bob.setBetHash(sha3(bobSalt, bobTarget));
     bob.doApprove(game, betSize, betAsset);
-    bob.doCommitBet(bob);
+    bob.doJoinGame(bob);
 
     barb.setBetHash(sha3(barbSalt, barbTarget));
     barb.doApprove(game, betSize, betAsset);
-    barb.doCommitBet(barb);
+    barb.doJoinGame(barb);
 
     izzy.setBetHash(sha3(izzySalt, izzyTarget));
     izzy.doApprove(game, betSize, betAsset);
-    izzy.doCommitBet(izzy);
+    izzy.doJoinGame(izzy);
 
     // Advance the game past the commitment round
     game.setBlockNumber(block.number + game.commitmentBlocks());
@@ -422,19 +422,19 @@ contract MakerLobbyTest is Test {
     // Commit
     albert.setBetHash(sha3(albertSalt, albertTarget));
     albert.doApprove(game, betSize, betAsset);
-    albert.doCommitBet(albert);
+    albert.doJoinGame(albert);
 
     bob.setBetHash(sha3(bobSalt, bobTarget));
     bob.doApprove(game, betSize, betAsset);
-    bob.doCommitBet(bob);
+    bob.doJoinGame(bob);
 
     barb.setBetHash(sha3(barbSalt, barbTarget));
     barb.doApprove(game, betSize, betAsset);
-    barb.doCommitBet(barb);
+    barb.doJoinGame(barb);
 
     izzy.setBetHash(sha3(izzySalt, izzyTarget));
     izzy.doApprove(game, betSize, betAsset);
-    izzy.doCommitBet(izzy);
+    izzy.doJoinGame(izzy);
 
     // Advance the game past the commitment round
     game.setBlockNumber(block.number + game.commitmentBlocks());
@@ -492,15 +492,15 @@ contract MakerLobbyTest is Test {
     // Commit
     albert.setBetHash(sha3(albertSalt, albertTarget));
     albert.doApprove(game, betSize, betAsset);
-    albert.doCommitBet(albert);
+    albert.doJoinGame(albert);
 
     bob.setBetHash(sha3(bobSalt, bobTarget));
     bob.doApprove(game, betSize, betAsset);
-    bob.doCommitBet(bob);
+    bob.doJoinGame(bob);
 
     barb.setBetHash(sha3(barbSalt, barbTarget));
     barb.doApprove(game, betSize, betAsset);
-    barb.doCommitBet(barb);
+    barb.doJoinGame(barb);
 
     // Advance the game past the commitment round
     game.setBlockNumber(block.number + game.commitmentBlocks());
@@ -537,19 +537,19 @@ contract MakerLobbyTest is Test {
     // Commit
     albert.setBetHash(sha3(albertSalt, albertTarget));
     albert.doApprove(game, betSize, betAsset);
-    albert.doCommitBet(albert);
+    albert.doJoinGame(albert);
 
     bob.setBetHash(sha3(bobSalt, bobTarget));
     bob.doApprove(game, betSize, betAsset);
-    bob.doCommitBet(bob);
+    bob.doJoinGame(bob);
 
     barb.setBetHash(sha3(barbSalt, barbTarget));
     barb.doApprove(game, betSize, betAsset);
-    barb.doCommitBet(barb);
+    barb.doJoinGame(barb);
 
     izzy.setBetHash(sha3(izzySalt, izzyTarget));
     izzy.doApprove(game, betSize, betAsset);
-    izzy.doCommitBet(izzy);
+    izzy.doJoinGame(izzy);
 
     // Advance the game past the commitment round
     game.setBlockNumber(block.number + game.commitmentBlocks());
@@ -604,19 +604,19 @@ contract MakerLobbyTest is Test {
     // Commit
     albert.setBetHash(sha3(albertSalt, albertTarget));
     albert.doApprove(game, betSize, betAsset);
-    albert.doCommitBet(albert);
+    albert.doJoinGame(albert);
 
     bob.setBetHash(sha3(bobSalt, bobTarget));
     bob.doApprove(game, betSize, betAsset);
-    bob.doCommitBet(bob);
+    bob.doJoinGame(bob);
 
     barb.setBetHash(sha3(barbSalt, barbTarget));
     barb.doApprove(game, betSize, betAsset);
-    barb.doCommitBet(barb);
+    barb.doJoinGame(barb);
 
     izzy.setBetHash(sha3(izzySalt, izzyTarget));
     izzy.doApprove(game, betSize, betAsset);
-    izzy.doCommitBet(izzy);
+    izzy.doJoinGame(izzy);
 
     // Advance the game past the commitment round
     game.setBlockNumber(block.number + game.commitmentBlocks());

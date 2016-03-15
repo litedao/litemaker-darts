@@ -33,13 +33,13 @@ contract MakerDartsGame is MakerUserGeneric, Owned {
   bytes32[] public winnerKeys; // commitHashes of winners
 
   event GameStarted();
-  event Commit(address sender, bytes32 betHash, address recipient);
+  event Commit(address sender, bytes32 betHash, address bettor);
   event Reveal(bytes32 betHash, bytes32 betTarget, bytes32 betSalt);
   event Result(bytes32 result, uint distance);
   event Claim(bytes32 commitHash, uint payout);
 
   struct Bet {
-    address recipient;
+    address bettor;
     bytes32 target;
     bytes32 salt;
     bytes32 result;
@@ -147,20 +147,23 @@ contract MakerDartsGame is MakerUserGeneric, Owned {
     winnerKeys.length = numWinners;
   }
 
-  function commitBet(bytes32 commitHash, address payoutRecipient)
-      commitmentRound {
-    if (bets[commitHash].recipient != 0x0 || payoutRecipient == 0x0) {
+  function joinGame(bytes32 commitHash) commitmentRound {
+    joinGame(commitHash, msg.sender);
+  }
+
+  function joinGame(bytes32 commitHash, address bettor) commitmentRound {
+    if (bets[commitHash].bettor != 0x0 || bettor == 0x0) {
       throw;
     }
-    bets[commitHash].recipient = payoutRecipient;
+    bets[commitHash].bettor = bettor;
     betKeys.push(commitHash);
-    transferFrom(msg.sender, this, betSize, betAsset);
-    Commit(msg.sender, commitHash, bets[commitHash].recipient);
+    transferFrom(bettor, this, betSize, betAsset);
+    Commit(msg.sender, commitHash, bets[commitHash].bettor);
   }
 
   function revealBet(bytes32 commitHash, bytes32 target, bytes32 salt)
       revealingRound {
-    if (commitHash != sha3(salt, target) || bets[commitHash].recipient == 0x0) {
+    if (commitHash != sha3(salt, target) || bets[commitHash].bettor == 0x0) {
       throw;
     }
     bets[commitHash].target = target;
@@ -228,7 +231,7 @@ contract MakerDartsGame is MakerUserGeneric, Owned {
         break;
       }
     }
-    transfer(bets[commitHash].recipient, totalPayout, betAsset);
+    transfer(bets[commitHash].bettor, totalPayout, betAsset);
     Claim(commitHash, totalPayout);
     bets[commitHash].claimed = true;
     _claimed = true;
@@ -239,7 +242,7 @@ contract MakerDartsGame is MakerUserGeneric, Owned {
                             revealBlocks + calculationBlocks) * 2;
 
     return (startingBlock != 0 || blockNumber() == 0) &&
-            bets[commitHash].recipient != 0x0 &&
+            bets[commitHash].bettor != 0x0 &&
             ((betKeys.length < participants) ||
              (!_claimed && blockNumber() >= afterClaimRound));
   }
@@ -251,7 +254,7 @@ contract MakerDartsGame is MakerUserGeneric, Owned {
     if (!refundable(commitHash)) {
       throw;
     }
-    transfer(bets[commitHash].recipient, betSize + participantReward, betAsset);
+    transfer(bets[commitHash].bettor, betSize + participantReward, betAsset);
     delete bets[commitHash];
 
     if (balanceOf(this, betAsset) == 0) {
@@ -259,19 +262,20 @@ contract MakerDartsGame is MakerUserGeneric, Owned {
     }
   }
 
-  function startGame(bytes32 commitHash, address recipient) onlyOwner beforeGame {
+  function startGame(bytes32 commitHash)
+      onlyOwner beforeGame {
     if (participantReward > 0) {
-      transferFrom(msg.sender, this,
+      transferFrom(owner, this,
                    participantReward * participants, betAsset);
     }
     startingBlock = blockNumber();
-    commitBet(commitHash, recipient);
+    joinGame(commitHash, owner);
     GameStarted();
   }
 
   function getBet(bytes32 commitHash) constant
       returns (address, bytes32, bytes32, bytes32, uint) {
-    return (bets[commitHash].recipient, bets[commitHash].result,
+    return (bets[commitHash].bettor, bets[commitHash].result,
             bets[commitHash].target, bets[commitHash].salt,
             bets[commitHash].distance);
   }
