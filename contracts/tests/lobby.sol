@@ -1,16 +1,14 @@
-import 'makeruser/generic.sol';
 import 'makeruser/user_test.sol';
 import 'lobby.sol';
 
-
-contract MakerDartsActor is MakerUserGeneric {
+contract MakerDartsActor is MakerUserTester {
   MakerDartsLobby lobby;
   MakerDartsGame game;
   bytes32 public betHash;
 
   function MakerDartsActor (MakerTokenRegistry registry,
                             MakerDartsLobby _lobby)
-           MakerUserGeneric (registry) {
+           MakerUserTester (registry) {
     lobby = _lobby;
   }
 
