@@ -1,4 +1,3 @@
-import 'dapple/debug.sol';
 import 'makeruser/generic.sol';
 import 'makeruser/interfaces.sol';
 import 'game.sol';

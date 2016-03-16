@@ -215,6 +215,10 @@ contract MakerDartsGame is MakerUserGeneric, Owned {
     return bets[commitHash].result;
   }
 
+  function getDistance(bytes32 commitHash) constant returns (uint256) {
+    return bets[commitHash].distance;
+  }
+
   function claim(bytes32 commitHash) claimRound {
     if (bets[commitHash].result == 0x0 || bets[commitHash].claimed) {
       throw;

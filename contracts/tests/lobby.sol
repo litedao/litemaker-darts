@@ -1,7 +1,5 @@
-import 'dapple/test.sol';
-import 'dappsys/token/base.sol';
-import 'dappsys/token/registry.sol';
 import 'makeruser/generic.sol';
+import 'makeruser/user_test.sol';
 import 'lobby.sol';
 
 
@@ -87,19 +85,7 @@ contract MakerDartsActor is MakerUserGeneric {
   }
 }
 
-contract MockTokenRegistry is MakerTokenRegistry {
-  function MockTokenRegistry () {
-    set('BTC', bytes32(address(new DSTokenBase(21000000000000))));
-    set('MKR', bytes32(address(new DSTokenBase(1000000 ether))));
-  }
-
-  function allocate(uint amount, bytes32 symbol, address bettor) {
-    getToken(symbol).transfer(bettor, amount);
-  }
-}
-
-contract MakerLobbyTest is Test {
-  MockTokenRegistry registry;
+contract MakerLobbyTest is MakerUserTest {
   MakerDartsLobby lobby;
   MakerDartsActor alice;
   MakerDartsActor albert;
@@ -107,8 +93,8 @@ contract MakerLobbyTest is Test {
   MakerDartsActor barb;
   MakerDartsActor izzy;
 
-  bytes32 constant betAsset = 'BTC';
-  uint constant betSize = 1000000;
+  bytes32 constant betAsset = 'DAI';
+  uint constant betSize = 1000;
 
   bytes32 constant aliceSalt = 0xdeadbeef0;
   bytes32 constant aliceTarget = 0x7a26e70;
@@ -126,19 +112,19 @@ contract MakerLobbyTest is Test {
   bytes32 constant izzyTarget = 0x7a26e74;
 
   function setUp() {
-    registry = new MockTokenRegistry();
-    lobby = new MakerDartsLobby(registry);
-    alice = new MakerDartsActor(registry, lobby);
-    albert = new MakerDartsActor(registry, lobby);
-    bob = new MakerDartsActor(registry, lobby);
-    barb = new MakerDartsActor(registry, lobby);
-    izzy = new MakerDartsActor(registry, lobby);
+    MakerUserTest.setUp();
+    lobby = new MakerDartsLobby(_M);
+    alice = new MakerDartsActor(_M, lobby);
+    albert = new MakerDartsActor(_M, lobby);
+    bob = new MakerDartsActor(_M, lobby);
+    barb = new MakerDartsActor(_M, lobby);
+    izzy = new MakerDartsActor(_M, lobby);
 
-    registry.allocate(betSize, betAsset, alice);
-    registry.allocate(betSize, betAsset, albert);
-    registry.allocate(betSize, betAsset, bob);
-    registry.allocate(betSize, betAsset, barb);
-    registry.allocate(betSize, betAsset, izzy);
+    transfer(alice, betSize, betAsset);
+    transfer(albert, betSize, betAsset);
+    transfer(bob, betSize, betAsset);
+    transfer(barb, betSize, betAsset);
+    transfer(izzy, betSize, betAsset);
   }
 
   function testFailBetWithoutApproval () {
@@ -146,7 +132,7 @@ contract MakerLobbyTest is Test {
     bytes32 target = 0x7a26e7;
     alice.setBetHash(sha3(salt, target));
 
-    alice.setGame(alice.createZSGame(1000000, 'BTC'));
+    alice.setGame(alice.createZSGame(betSize, 'DAI'));
     alice.doStartGame();
   }
 
@@ -186,10 +172,10 @@ contract MakerLobbyTest is Test {
   function testFullGoldenPathIncentivizedGame () logs_gas {
     alice.setBetHash(sha3(aliceSalt, aliceTarget));
 
-    var game = new MakerDartsGame(registry, betSize, betAsset, true);
+    var game = new MakerDartsGame(_M, betSize, betAsset, true);
     game.setBlockNumber(block.number);
     game.setParticipants(5);
-    game.setParticipantReward(10000);
+    game.setParticipantReward(10);
     game.setCommitmentBlocks(12);
     game.setRevealBlocks(12);
     game.setCalculationBlocks(12);
@@ -203,7 +189,7 @@ contract MakerLobbyTest is Test {
     barb.setGame(game);
     izzy.setGame(game);
 
-    registry.allocate(betSize*2, betAsset, alice);
+    transfer(alice, betSize*2, betAsset);
     alice.doApprove(game, betSize*2, betAsset);
     alice.doStartGame();
 
@@ -257,11 +243,11 @@ contract MakerLobbyTest is Test {
     izzy.doClaim();
 
     // Check balances
-    assertEq(alice.balanceIn(betAsset), 2210000);
-    assertEq(albert.balanceIn(betAsset), 260000);
-    assertEq(bob.balanceIn(betAsset), 2135000);
-    assertEq(barb.balanceIn(betAsset), 2135000);
-    assertEq(izzy.balanceIn(betAsset), 260000);
+    assertEq(alice.balanceIn(betAsset), 2210);
+    assertEq(albert.balanceIn(betAsset), 260);
+    assertEq(bob.balanceIn(betAsset), 2135);
+    assertEq(barb.balanceIn(betAsset), 2135);
+    assertEq(izzy.balanceIn(betAsset), 260);
   }
 
   function testFullGoldenPathZeroSumGame () logs_gas {
@@ -492,7 +478,7 @@ contract MakerLobbyTest is Test {
 
     var participantReward = 10;
     var participantRewardCost = (participantReward * game.participants());
-    registry.allocate(participantRewardCost, betAsset, alice);
+    transfer(alice, participantRewardCost, betAsset);
     alice.doApprove(game, betSize + participantRewardCost, betAsset);
     alice.doSetParticipantReward(participantReward);
     alice.doStartGame();
@@ -541,7 +527,7 @@ contract MakerLobbyTest is Test {
 
     var participantReward = 10;
     var participantRewardCost = (participantReward * game.participants());
-    registry.allocate(participantRewardCost, betAsset, alice);
+    transfer(alice, participantRewardCost, betAsset);
     alice.doApprove(game, betSize + participantRewardCost, betAsset);
     alice.doSetParticipantReward(participantReward);
     alice.doStartGame();
