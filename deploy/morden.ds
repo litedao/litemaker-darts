@@ -1,0 +1,2 @@
+var lobby = new MakerDartsLobby('0x213183be469a38e99facc2c468bb7e3c01377bce')
+export lobby
