@@ -26,20 +26,21 @@ first, let's create a file called `lobby.sol` in `contracts/tests`, and let's
 start a test contract:
 
 ```
-import 'dapple/test.sol';
+import 'makeruser/user_test.sol';
 
-contract MakerDartsLobbyTest is Test {
+contract MakerDartsLobbyTest is MakerUserTest {
 
 }
 ```
 
-The line at the top of the file imports `test.sol` from the Dapple virtual
-package automatically available in every Dapple package. This file defines a
-smart contract called Test which every test must inherit from in order to get
-run by the `dapple test` command. The Test contract supplies a few functions
-relevant to testing, such as `assertTrue`, `assertFalse`, `assertEq`, the
-`logs_gas` and `tests` modifiers, and others. The contract definition may be
-found [on
+The line at the top of the file imports `user_test.sol` from the MakerUser
+package. This file defines a contract named MakerUserTest which inherits from
+the Test contract defined in the Dapple virtual package automatically available
+in every Dapple package. Every test must inherit either directly or indirectly
+from Test in order to get run by the `dapple test` command. The Test contract
+supplies a few functions relevant to testing, such as `assertTrue`,
+`assertFalse`, `assertEq`, the `logs_gas` and `tests` modifiers, and others. The
+contract definition may be found [on
 Github](https://github.com/nexusdev/dapple/blob/master/constants/test.sol) at
 the time of this writing.
 
@@ -48,48 +49,60 @@ which provides many logging events which can be useful during the debugging
 process. The contract definition for Debug is likewise [on
 Github](https://github.com/nexusdev/dapple/blob/master/constants/debug.sol).
 
+The MakerUserTest contract gets us a mock token registry contract for free via
+its `setUp` function. We can interact with the mock token registry using the
+same functions available to us in any contract inheriting from MakerUser, such
+as `getBalance`, `transfer`, `transferFrom`, `allowance`, and `approve`. The
+`setUp` function also allocates balances of 1,000,000 of the smallest units
+of MKR, ETH, and DAI to our test contract.
+
 Now back to our test contract. We're going to need an "actor" contract to play
 the parts of the various players, so let's write one that does what we want
 Alice to be able to do in our current test:
 
 ```
-contract LobbyActor {
+contract MakerDartsActor is MakerUserTester {
   MakerDartsLobby lobby;
 
-  function LobbyUser (MakerDartsLobby _lobby) {
+  function MakerDartsActor (MakerTokenRegistry registry,
+                            MakerDartsLobby _lobby)
+           MakerUserTester (registry) {
     lobby = _lobby;
   }
 
-  function createZSGame (uint bet, bytes32 asset, bytes32 hash)
+  function createZSGame (uint bet, bytes32 asset)
       returns (MakerDartsGame) {
-    return MakerDartsGame(_lobby.createZeroSumGame(bet, asset, hash));
+    return MakerDartsGame(_lobby.createZeroSumGame(bet, asset));
   }
 }
 ```
 
 This contract allows us to call our MakerDartsLobby functions from various
-addresses at will. Now let's plug it into our test:
+addresses at will, simulating multiple users interacting with it. Now let's plug
+it into our test:
 
 ```
-contract MakerLobbyTest is Test {
-  Lobby lobby;
-  LobbyActor alice;
+contract MakerLobbyTest is MakerUserTest {
+  MakerDartsLobby lobby;
+  MakerDartsActor alice;
+
+  bytes32 constant betAsset = 'DAI';
+  uint constant betSize = 1000;
 
   function setUp() {
-    lobby = new MakerDartsLobby();
-    alice = new LobbyActor(lobby);
+    MakerUserTest.setUp(); // call parent function
+    lobby = new MakerDartsLobby(_M); // _M is the token registry
+    alice = new MakerDartsActor(_M, lobby);
+    transfer(alice, betSize, betAsset); // give Alice some dai to play with
   }
 
   function testCreateZSGame ()
       tests("Alice's ability to create a zero-sum Maker asset game")
       logs_gas {
-    bytes32 salt = 'this is a terrible salt';
-    bytes32 target = bytes32(1);
-    var betHash = sha3(salt + target);
-    var game = alice.createZSGame(1000000, 'BTC', betHash);
-    assertEq(game.participantReward(), 0);
-    assertEq(game.betSize(), 1000000);
-    assertTrue(game.tokenContract() != 0x0);
+    var game = alice.createZSGame(betSize, betAsset);
+    assertEq(game.participantReward(), 0); // default setting
+    assertEq(game.betSize(), betSize);
+    assertEq32(game.betAsset(), betAsset); // assertEq32 is assertEq for bytes32
   }
 }
 ```
@@ -110,4 +123,13 @@ dapple test
 ```
 
 Our test will, of course, fail. None of the contracts referenced in our test
-exist yet. Next we will proceed with defining them.
+exist yet. If you aren't used to test driven development, this is the general
+flow TDD practitioners attempt to follow. While it may seem obvious that the
+test would fail in this case, it's always a good idea to test one's assumptions,
+even if they seem to be fairly obvious. If our test *didn't* fail, that would be
+very interesting and would indicate a broken test whose passing cannot be
+trusted! The first thing a test tests is itself: it demonstrates its correctness
+by failing.
+
+Next we'll write minimal implementations of our contracts and get our test
+passing.
