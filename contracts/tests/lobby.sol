@@ -157,6 +157,91 @@ contract MakerLobbyTest is MakerUserTest {
     bob.doJoinGame(bob);
   }
 
+  function testFailRedundantParticipant () logs_gas {
+    alice.setBetHash(sha3(aliceSalt, aliceTarget));
+
+    var game = new MakerDartsGame(_M, betSize, betAsset, true);
+    game.setBlockNumber(block.number);
+    game.setParticipants(2);
+    game.setParticipantReward(10);
+    game.setCommitmentBlocks(12);
+    game.setRevealBlocks(12);
+    game.setCalculationBlocks(12);
+    game.setWinnerCut(75);
+    game.setWinners(1);
+    game.setOwner(alice);
+
+    alice.setGame(game);
+    albert.setGame(game);
+    bob.setGame(game);
+
+    transfer(alice, betSize*2, betAsset);
+    alice.doApprove(game, betSize*2, betAsset);
+    alice.doStartGame();
+
+    // Commit
+    albert.setBetHash(sha3(albertSalt, albertTarget));
+    albert.doApprove(game, betSize, betAsset);
+    albert.doJoinGame(albert);
+
+    bob.setBetHash(sha3(bobSalt, bobTarget));
+    bob.doApprove(game, betSize, betAsset);
+    bob.doJoinGame(bob);
+
+    // Advance the game past the commitment round
+    game.setBlockNumber(block.number + game.commitmentBlocks());
+
+    // Reveal
+    alice.doRevealBet(aliceTarget, aliceSalt);
+    albert.doRevealBet(albertTarget, albertSalt);
+    bob.doRevealBet(bobTarget, bobSalt);
+
+    // Advance the game past the reveal round
+    game.setBlockNumber(block.number + game.commitmentBlocks() +
+                       game.revealBlocks());
+
+    // Calculate
+    albert.doCalculateResult();
+    albert.doCalculateResult();
+    bob.doCalculateResult();
+
+    // Advance the game past the calculation round
+    game.setBlockNumber(block.number + game.commitmentBlocks() +
+                       game.revealBlocks() + game.calculationBlocks());
+
+    // Claim
+    alice.doClaim();
+    albert.doClaim();
+    bob.doClaim();
+  }
+
+  function testFailJoingameWithLessBetsize () logs_gas {
+    alice.setBetHash(sha3(aliceSalt, aliceTarget));
+
+    var game = new MakerDartsGame(_M, betSize, betAsset, true);
+    game.setBlockNumber(block.number);
+    game.setParticipants(2);
+    game.setParticipantReward(10);
+    game.setCommitmentBlocks(12);
+    game.setRevealBlocks(12);
+    game.setCalculationBlocks(12);
+    game.setWinnerCut(75);
+    game.setWinners(1);
+    game.setOwner(alice);
+
+    alice.setGame(game);
+    albert.setGame(game);
+
+    transfer(alice, betSize*2, betAsset);
+    alice.doApprove(game, betSize*2, betAsset);
+    alice.doStartGame();
+
+    // Commit
+    albert.setBetHash(sha3(albertSalt, albertTarget));
+    albert.doApprove(game, betSize - 1, betAsset);
+    albert.doJoinGame(albert);
+  }
+
   function testStartGame () logs_gas {
     // Create & first commit
     alice.setBetHash(sha3(aliceSalt, aliceTarget));
