@@ -1,5 +1,4 @@
-import 'makeruser/generic.sol';
-import 'makeruser/interfaces.sol';
+import 'erc20/erc20.sol';
 
 contract Owned {
   address public owner;
@@ -18,9 +17,9 @@ contract Owned {
   }
 }
 
-contract MakerDartsGame is MakerUserGeneric, Owned {
+contract MakerDartsGame is Owned {
   uint public betSize; // in the asset's smallest unit
-  bytes32 public betAsset;
+  ERC20 public betAsset;
   uint public participants; // game can't start until this many players commit
   uint public participantReward; // base reward for playing
   uint public commitmentBlocks; // number of blocks in commitment round
@@ -108,12 +107,10 @@ contract MakerDartsGame is MakerUserGeneric, Owned {
     _
   }
 
-  function MakerDartsGame (MakerTokenRegistry registry,
-                           uint _betSize,
-                           bytes32 _betAsset,
+  function MakerDartsGame (uint _betSize,
+                           ERC20 _betAsset,
                            bool _debug)
-           MakerUserGeneric (registry) {
-
+  {
     betSize = _betSize;
     betAsset = _betAsset;
     debug = _debug;
@@ -157,7 +154,7 @@ contract MakerDartsGame is MakerUserGeneric, Owned {
     }
     bets[commitHash].bettor = bettor;
     betKeys.push(commitHash);
-    transferFrom(bettor, this, betSize, betAsset);
+    betAsset.transferFrom(bettor, this, betSize);
     Commit(msg.sender, commitHash, bets[commitHash].bettor);
   }
 
@@ -235,7 +232,7 @@ contract MakerDartsGame is MakerUserGeneric, Owned {
         break;
       }
     }
-    transfer(bets[commitHash].bettor, totalPayout, betAsset);
+    betAsset.transfer(bets[commitHash].bettor, totalPayout);
     Claim(commitHash, totalPayout);
     bets[commitHash].claimed = true;
     _claimed = true;
@@ -266,10 +263,10 @@ contract MakerDartsGame is MakerUserGeneric, Owned {
       refundSize += (participantReward * participants);
     }
 
-    transfer(bets[commitHash].bettor, refundSize, betAsset);
+    betAsset.transfer(bets[commitHash].bettor, refundSize);
     delete bets[commitHash];
 
-    if (balanceOf(this, betAsset) == 0) {
+    if (betAsset.balanceOf(this) == 0) {
       selfdestruct(owner);
     }
   }
@@ -277,8 +274,8 @@ contract MakerDartsGame is MakerUserGeneric, Owned {
   function startGame(bytes32 commitHash)
       onlyOwner beforeGame {
     if (participantReward > 0) {
-      transferFrom(owner, this,
-                   participantReward * participants, betAsset);
+      betAsset.transferFrom(owner, this,
+                   participantReward * participants);
     }
     startingBlock = blockNumber();
     joinGame(commitHash, owner);

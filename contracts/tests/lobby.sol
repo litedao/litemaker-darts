@@ -1,14 +1,14 @@
-import 'makeruser/user_test.sol';
+import 'dapple/test.sol';
 import 'lobby.sol';
+import 'erc20/base.sol';
 
-contract MakerDartsActor is MakerUserTester {
+contract MakerDartsActor {
   MakerDartsLobby lobby;
   MakerDartsGame game;
   bytes32 public betHash;
 
-  function MakerDartsActor (MakerTokenRegistry registry,
-                            MakerDartsLobby _lobby)
-           MakerUserTester (registry) {
+  function MakerDartsActor (MakerDartsLobby _lobby)
+  {
     lobby = _lobby;
   }
 
@@ -20,14 +20,14 @@ contract MakerDartsActor is MakerUserTester {
     betHash = _betHash;
   }
 
-  function createGame (uint bet, bytes32 asset)
+  function createGame (uint bet, ERC20 asset)
       returns (MakerDartsGame) {
     var game = MakerDartsGame(lobby.createGame(bet, asset, true));
     game.setBlockNumber(1);
     return game;
   }
 
-  function createZSGame (uint bet, bytes32 asset)
+  function createZSGame (uint bet, ERC20 asset)
       returns (MakerDartsGame) {
     var zsGame = MakerDartsGame(lobby.createZeroSumGame(bet, asset, true));
     zsGame.setBlockNumber(1);
@@ -54,8 +54,8 @@ contract MakerDartsActor is MakerUserTester {
     game.startGame(betHash);
   }
 
-  function doApprove(address spender, uint value, bytes32 symbol) {
-    approve(spender, value, symbol);
+  function doApprove(address spender, uint value, ERC20 token) {
+    token.approve(spender, value);
   }
 
   function doJoinGame(address bettor) {
@@ -78,12 +78,12 @@ contract MakerDartsActor is MakerUserTester {
     game.requestRefund(betHash);
   }
 
-  function balanceIn(bytes32 asset) returns (uint) {
-    return balanceOf(this, asset);
+  function balanceIn(ERC20 asset) returns (uint) {
+    return asset.balanceOf(this);
   }
 }
 
-contract MakerLobbyTest is MakerUserTest {
+contract MakerLobbyTest is Test {
   MakerDartsLobby lobby;
   MakerDartsActor alice;
   MakerDartsActor albert;
@@ -91,7 +91,7 @@ contract MakerLobbyTest is MakerUserTest {
   MakerDartsActor barb;
   MakerDartsActor izzy;
 
-  bytes32 constant betAsset = 'DAI';
+  ERC20 betAsset;
   uint constant betSize = 1000;
 
   bytes32 constant aliceSalt = 0xdeadbeef0;
@@ -110,19 +110,19 @@ contract MakerLobbyTest is MakerUserTest {
   bytes32 constant izzyTarget = 0x7a26e74;
 
   function setUp() {
-    MakerUserTest.setUp();
-    lobby = new MakerDartsLobby(_M);
-    alice = new MakerDartsActor(_M, lobby);
-    albert = new MakerDartsActor(_M, lobby);
-    bob = new MakerDartsActor(_M, lobby);
-    barb = new MakerDartsActor(_M, lobby);
-    izzy = new MakerDartsActor(_M, lobby);
+    lobby = new MakerDartsLobby();
+    alice = new MakerDartsActor(lobby);
+    albert = new MakerDartsActor(lobby);
+    bob = new MakerDartsActor(lobby);
+    barb = new MakerDartsActor(lobby);
+    izzy = new MakerDartsActor(lobby);
 
-    transfer(alice, betSize, betAsset);
-    transfer(albert, betSize, betAsset);
-    transfer(bob, betSize, betAsset);
-    transfer(barb, betSize, betAsset);
-    transfer(izzy, betSize, betAsset);
+    betAsset = new ERC20Base(1000000 * 10**18);
+    betAsset.transfer(alice, betSize);
+    betAsset.transfer(albert, betSize);
+    betAsset.transfer(bob, betSize);
+    betAsset.transfer(barb, betSize);
+    betAsset.transfer(izzy, betSize);
   }
 
   function testFailBetWithoutApproval () {
@@ -130,7 +130,7 @@ contract MakerLobbyTest is MakerUserTest {
     bytes32 target = 0x7a26e7;
     alice.setBetHash(sha3(salt, target));
 
-    alice.setGame(alice.createZSGame(betSize, 'DAI'));
+    alice.setGame(alice.createZSGame(betSize, betAsset));
     alice.doStartGame();
   }
 
@@ -140,7 +140,7 @@ contract MakerLobbyTest is MakerUserTest {
     var game = alice.createZSGame(betSize, betAsset);
     assertEq(game.participantReward(), 0);
     assertEq(game.betSize(), betSize);
-    assertEq32(game.betAsset(), betAsset);
+    assertEq(game.betAsset(), betAsset);
   }
 
   function testFailAtDoubleBetting () logs_gas {
@@ -160,7 +160,7 @@ contract MakerLobbyTest is MakerUserTest {
   function testFailRedundantParticipant () logs_gas {
     alice.setBetHash(sha3(aliceSalt, aliceTarget));
 
-    var game = new MakerDartsGame(_M, betSize, betAsset, true);
+    var game = new MakerDartsGame(betSize, betAsset, true);
     game.setBlockNumber(block.number);
     game.setParticipants(2);
     game.setParticipantReward(10);
@@ -175,7 +175,7 @@ contract MakerLobbyTest is MakerUserTest {
     albert.setGame(game);
     bob.setGame(game);
 
-    transfer(alice, betSize*2, betAsset);
+    betAsset.transfer(alice, betSize*2);
     alice.doApprove(game, betSize*2, betAsset);
     alice.doStartGame();
 
@@ -218,7 +218,7 @@ contract MakerLobbyTest is MakerUserTest {
   function testFailJoingameWithLessBetsize () logs_gas {
     alice.setBetHash(sha3(aliceSalt, aliceTarget));
 
-    var game = new MakerDartsGame(_M, betSize, betAsset, true);
+    var game = new MakerDartsGame(betSize, betAsset, true);
     game.setBlockNumber(block.number);
     game.setParticipants(2);
     game.setParticipantReward(10);
@@ -232,7 +232,7 @@ contract MakerLobbyTest is MakerUserTest {
     alice.setGame(game);
     albert.setGame(game);
 
-    transfer(alice, betSize*2, betAsset);
+    betAsset.transfer(alice, betSize*2);
     alice.doApprove(game, betSize*2, betAsset);
     alice.doStartGame();
 
@@ -255,7 +255,7 @@ contract MakerLobbyTest is MakerUserTest {
   function testFullGoldenPathIncentivizedGame () logs_gas {
     alice.setBetHash(sha3(aliceSalt, aliceTarget));
 
-    var game = new MakerDartsGame(_M, betSize, betAsset, true);
+    var game = new MakerDartsGame(betSize, betAsset, true);
     game.setBlockNumber(block.number);
     game.setParticipants(5);
     game.setParticipantReward(10);
@@ -272,7 +272,7 @@ contract MakerLobbyTest is MakerUserTest {
     barb.setGame(game);
     izzy.setGame(game);
 
-    transfer(alice, betSize*2, betAsset);
+    betAsset.transfer(alice, betSize*2);
     alice.doApprove(game, betSize*2, betAsset);
     alice.doStartGame();
 
@@ -561,7 +561,7 @@ contract MakerLobbyTest is MakerUserTest {
 
     var participantReward = 10;
     var participantRewardCost = (participantReward * game.participants());
-    transfer(alice, participantRewardCost, betAsset);
+    betAsset.transfer(alice, participantRewardCost);
     alice.doApprove(game, betSize + participantRewardCost, betAsset);
     alice.doSetParticipantReward(participantReward);
     alice.doStartGame();
@@ -610,7 +610,7 @@ contract MakerLobbyTest is MakerUserTest {
 
     var participantReward = 10;
     var participantRewardCost = (participantReward * game.participants());
-    transfer(alice, participantRewardCost, betAsset);
+    betAsset.transfer(alice, participantRewardCost);
     alice.doApprove(game, betSize + participantRewardCost, betAsset);
     alice.doSetParticipantReward(participantReward);
     alice.doStartGame();
@@ -719,7 +719,7 @@ contract MakerLobbyTest is MakerUserTest {
   function testEvents() {
     alice.setBetHash(sha3(aliceSalt, aliceTarget));
 
-    var game = new MakerDartsGame(_M, betSize, betAsset, true);
+    var game = new MakerDartsGame(betSize, betAsset, true);
     game.setBlockNumber(block.number);
     game.setParticipants(2);
     game.setParticipantReward(10);
@@ -747,7 +747,7 @@ contract MakerLobbyTest is MakerUserTest {
     alice.setGame(game);
     albert.setGame(game);
 
-    transfer(alice, betSize*2, betAsset);
+    betAsset.transfer(alice, betSize*2);
     alice.doApprove(game, betSize*2, betAsset);
     alice.doStartGame();
 

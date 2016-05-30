@@ -1,21 +1,17 @@
-import 'makeruser/generic.sol';
-import 'makeruser/interfaces.sol';
+import 'erc20/erc20.sol';
 import 'game.sol';
 
-contract MakerDartsLobby is MakerUserGeneric {
+contract MakerDartsLobby {
   event GamePending(address game);
 
-  function MakerDartsLobby (MakerTokenRegistry registry)
-           MakerUserGeneric (registry) {}
-
-  function createZeroSumGame(uint betSize, bytes32 betAsset)
+  function createZeroSumGame(uint betSize, ERC20 betAsset)
       returns (address) {
     return createZeroSumGame(betSize, betAsset, false);
   }
 
-  function createZeroSumGame(uint betSize, bytes32 betAsset, bool debug)
+  function createZeroSumGame(uint betSize, ERC20 betAsset, bool debug)
       returns (address) {
-    var game = new MakerDartsGame(_M, betSize, betAsset, debug);
+    var game = new MakerDartsGame(betSize, betAsset, debug);
 
     // Default settings.
     game.setParticipants(5);
@@ -33,9 +29,9 @@ contract MakerDartsLobby is MakerUserGeneric {
     return game;
   }
 
-  function createGame(uint betSize, bytes32 betAsset, bool debug)
+  function createGame(uint betSize, ERC20 betAsset, bool debug)
       returns (address) {
-    var game = new MakerDartsGame(_M, betSize, betAsset, debug);
+    var game = new MakerDartsGame(betSize, betAsset, debug);
 
     if (!debug) {
       GamePending(game);
