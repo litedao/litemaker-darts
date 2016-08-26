@@ -91,8 +91,7 @@ contract MakerDartsGame is Owned {
     var gameBlocks = (commitmentBlocks + revealBlocks + calculationBlocks);
     if (startingBlock == 0 ||
         betKeys.length < participants ||
-        blockNumber() < startingBlock + gameBlocks ||
-        blockNumber() >= startingBlock + (gameBlocks * 2)) {
+        blockNumber() < startingBlock + gameBlocks) {
       throw;
     }
     _
