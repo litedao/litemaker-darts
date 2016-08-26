@@ -188,7 +188,7 @@ contract MakerDartsGame is Owned {
 
     uint256 maxKey = 0;
     uint256 maxDistance = 0;
-    bets[commitHash].distance = uint(bets[commitHash].target | result);
+    bets[commitHash].distance = uint(bets[commitHash].target ^ result);
     for (uint j = 0; j < winnerKeys.length; j += 1) {
       if (bets[winnerKeys[j]].distance > maxDistance) {
         maxKey = j;
