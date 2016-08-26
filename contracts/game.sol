@@ -239,13 +239,14 @@ contract MakerDartsGame is Owned {
   }
 
   function refundable(bytes32 commitHash) constant returns (bool) {
-    var afterClaimRound = startingBlock + (commitmentBlocks +
+    var commitRound = startingBlock + commitmentBlocks;
+    var claimDelay = startingBlock + (commitmentBlocks +
                             revealBlocks + calculationBlocks) * 2;
 
     return (startingBlock != 0 || blockNumber() == 0) &&
             bets[commitHash].bettor != 0x0 &&
-            ((betKeys.length < participants) ||
-             (!_claimed && blockNumber() >= afterClaimRound));
+            ((betKeys.length < participants && blockNumber() > commitRound) ||
+             (!_claimed && blockNumber() >= claimDelay));
   }
 
   function requestRefund(bytes32 commitHash) {
