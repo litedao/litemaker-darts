@@ -12,11 +12,11 @@ A game is initiated when a user posts a bet of arbitrary size, a hash of a salt
 value plus a target value, the minimum number of other participants they desire,
 the winner's reward (an integer percentage of the losers' bets the winners may
 claim), the number of winners this game, the lengths in blocks of the
-commitment, revelation, and tabulation rounds, and the symbol of the token being
-used for placing bets. They may also optionally offer a fee to incentivize
-participants with lower risk tolerance to join. (It is not recommended that the
-fee exceed half the size of the bet, as this attenuates the incentive
-participants have to provide unpredictable input.)
+commitment, revelation, and tabulation rounds, and the address of the ERC20
+token being used for placing bets. They may also optionally offer a fee to
+incentivize participants with lower risk tolerance to join. (It is not
+recommended that the fee exceed half the size of the bet, as this attenuates the
+incentive participants have to provide unpredictable input.)
 
 To join a game, a prospective participant must post a bet equal to the bet of
 the person who created the game, a hash of a salt value plus a target value, and
