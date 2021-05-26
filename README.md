@@ -1,6 +1,6 @@
-# Maker Darts
+# LiteMaker Darts
 
-Maker Darts is a RANDAO implementation for Ethereum. Randomization is
+LiteMaker Darts is a RANDAO implementation for Lite. Randomization is
 provided by participants who themselves desire a trustworthy random number.
 Participants are furthermore incentivized to provide unpredictable input, as
 any observable patterns may be leveraged by other players to obtain
